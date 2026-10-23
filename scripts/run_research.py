@@ -70,8 +70,15 @@ def run(task, output, run_id, request_id):
                             '--output', str(output / 'experiment')])
             if code == 0:
                 report = output / 'experiment' / ('test-report' if attention else 'report') / 'summary.json'
-                record['summary'] = {'unit': 'receiver tokens', 'rows': json.loads(report.read_text())['summary'],
+                report_data = json.loads(report.read_text())
+                record['summary'] = {'unit': 'receiver tokens', 'rows': report_data['summary'],
                     'interpretation': 'Random tiny models and artificial receivers. Validates execution, not real-model quality.'}
+                if attention:
+                    calibration = json.loads((output / 'experiment/calibration.json').read_text())
+                    record['summary']['calibration'] = {'threshold': calibration['threshold'],
+                        'entries': {key: {k: v for k, v in entry.items() if k in ('status', 'ratio')}
+                                    for key, entry in calibration['entries'].items()},
+                        'heldOut': report_data.get('attention_threshold')}
         elif task == 'theory':
             code = command(['-m', 'leaklab', 'theory', '--output', str(output / 'frontier.json')])
             if code == 0:

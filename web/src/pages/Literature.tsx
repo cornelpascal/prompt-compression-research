@@ -1,29 +1,352 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { ArrowUpRight, Search } from 'lucide-react'
-import { Badge, Empty, Notice, PageTitle } from '../components'
-import { date, fmt, useLiterature } from '../data'
-import type { Literature as LiteratureData } from '../types'
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { ArrowUpRight, Search } from "lucide-react";
+import { Badge, Empty, Notice, PageTitle } from "../components";
+import { date, fmt, useLiterature } from "../data";
+import type { Literature as LiteratureData } from "../types";
 
-function EvidenceGraph({data,selected,onSelect}:{data:LiteratureData;selected:string;onSelect:(id:string)=>void}){
-  const ref=useRef<HTMLDivElement>(null)
-  const edges=data.edges.filter(e=>e.source===selected||e.target===selected).slice(0,60)
-  const ids=[...new Set([selected,...edges.flatMap(e=>[e.source,e.target])])]
-  useEffect(()=>{let disposed=false;let graph:import('cytoscape').Core|undefined
-    import('cytoscape').then(({default:cytoscape})=>{if(disposed||!ref.current)return
-      const valid=new Set(data.papers.map(p=>p.id));const dedup=[...new Map(edges.filter(e=>valid.has(e.source)&&valid.has(e.target)&&e.source!==e.target).map(e=>[e.source+e.target,e])).values()]
-      graph=cytoscape({container:ref.current,elements:[...ids.filter(id=>valid.has(id)).map(id=>{const p=data.papers.find(p=>p.id===id)!;return {data:{id,label:p.title.length>38?p.title.slice(0,36)+'…':p.title,selected:id===selected}}}),...dedup.map((e,i)=>({data:{id:'e'+i,source:e.source,target:e.target}}))],layout:{name:'cose',animate:false,nodeRepulsion:()=>18000,idealEdgeLength:()=>100,padding:40},style:[{selector:'node',style:{'background-color':'#aebd9b',label:'data(label)','font-family':'system-ui','font-size':10,'text-wrap':'wrap','text-max-width':'120px','text-valign':'bottom','text-margin-y':7,width:20,height:20,color:'#43524a'}},{selector:'node[selected = true]',style:{'background-color':'#285d4b',width:32,height:32}},{selector:'edge',style:{width:1.3,'line-color':'#c1c9ba','target-arrow-color':'#a9b7a0','target-arrow-shape':'triangle','curve-style':'bezier'}}]})
-      graph.on('tap','node',e=>onSelect(e.target.id()))
-    });return()=>{disposed=true;graph?.destroy()}
-  },[data,selected])
-  return <><div ref={ref} className="network" role="img" aria-label="Reviewed dependency nominations around the selected paper. These edges are not confirmed ancestry."/><p className="caption">{edges.length} reviewed dependency nominations around this paper. Click a node to inspect it. No production ancestry links exist in this snapshot.</p><details><summary>Accessible relationship list</summary><ul className="related-list">{ids.filter(id=>id!==selected).map(id=><li key={id}><button onClick={()=>onSelect(id)}>{data.papers.find(p=>p.id===id)?.title||id}</button></li>)}{ids.length===1&&<li>No exported relationships for this paper.</li>}</ul></details></>
+function EvidenceGraph({
+  data,
+  selected,
+  onSelect,
+}: {
+  data: LiteratureData;
+  selected: string;
+  onSelect: (id: string) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const edges = data.edges
+    .filter((e) => e.source === selected || e.target === selected)
+    .slice(0, 60);
+  const ids = [
+    ...new Set([selected, ...edges.flatMap((e) => [e.source, e.target])]),
+  ];
+  useEffect(() => {
+    let disposed = false;
+    let graph: import("cytoscape").Core | undefined;
+    import("cytoscape").then(({ default: cytoscape }) => {
+      if (disposed || !ref.current) return;
+      const valid = new Set(data.papers.map((p) => p.id));
+      const dedup = [
+        ...new Map(
+          edges
+            .filter(
+              (e) =>
+                valid.has(e.source) &&
+                valid.has(e.target) &&
+                e.source !== e.target,
+            )
+            .map((e) => [e.source + e.target, e]),
+        ).values(),
+      ];
+      graph = cytoscape({
+        container: ref.current,
+        elements: [
+          ...ids
+            .filter((id) => valid.has(id))
+            .map((id) => {
+              const p = data.papers.find((p) => p.id === id)!;
+              return {
+                data: {
+                  id,
+                  label:
+                    p.title.length > 38 ? p.title.slice(0, 36) + "…" : p.title,
+                  selected: id === selected,
+                },
+              };
+            }),
+          ...dedup.map((e, i) => ({
+            data: { id: "e" + i, source: e.source, target: e.target },
+          })),
+        ],
+        layout: {
+          name: "cose",
+          animate: false,
+          nodeRepulsion: () => 18000,
+          idealEdgeLength: () => 100,
+          padding: 40,
+        },
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "#aebd9b",
+              label: "data(label)",
+              "font-family": "system-ui",
+              "font-size": 10,
+              "text-wrap": "wrap",
+              "text-max-width": "120px",
+              "text-valign": "bottom",
+              "text-margin-y": 7,
+              width: 20,
+              height: 20,
+              color: "#43524a",
+            },
+          },
+          {
+            selector: "node[selected = true]",
+            style: { "background-color": "#285d4b", width: 32, height: 32 },
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 1.3,
+              "line-color": "#c1c9ba",
+              "target-arrow-color": "#a9b7a0",
+              "target-arrow-shape": "triangle",
+              "curve-style": "bezier",
+            },
+          },
+        ],
+      });
+      graph.on("tap", "node", (e) => onSelect(e.target.id()));
+    });
+    return () => {
+      disposed = true;
+      graph?.destroy();
+    };
+  }, [data, selected]);
+  return (
+    <>
+      <div
+        ref={ref}
+        className="network"
+        role="img"
+        aria-label="Reviewed dependency nominations around the selected paper. These edges are not confirmed ancestry."
+      />
+      <p className="caption">
+        {edges.length} reviewed dependency nominations around this paper. Click
+        a node to inspect it. No production ancestry links exist in this
+        snapshot.
+      </p>
+      <details>
+        <summary>Accessible relationship list</summary>
+        <ul className="related-list">
+          {ids
+            .filter((id) => id !== selected)
+            .map((id) => (
+              <li key={id}>
+                <button onClick={() => onSelect(id)}>
+                  {data.papers.find((p) => p.id === id)?.title || id}
+                </button>
+              </li>
+            ))}
+          {ids.length === 1 && (
+            <li>No exported relationships for this paper.</li>
+          )}
+        </ul>
+      </details>
+    </>
+  );
 }
 
-export default function Literature(){
-  const {data,error}=useLiterature();const [params,setParams]=useSearchParams();const query=params.get('q')||''
-  const [onlyReviewed,setOnlyReviewed]=useState(false);const [page,setPage]=useState(0);const [selected,setSelected]=useState('')
-  const matches=useMemo(()=>data?.papers.filter(p=>(!onlyReviewed||p.status==='complete')&&`${p.title} ${p.authors.join(' ')} ${p.arxiv_id||''}`.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>b.relevance-a.relevance||a.title.localeCompare(b.title))||[],[data,query,onlyReviewed])
-  const paper=data?.papers.find(p=>p.id===selected)||matches[0]
-  const ideas=data?.ideas.filter(i=>i.paper_id===paper?.id)||[]
-  return <><PageTitle eyebrow="PAPERKB · LITERATURE & EVIDENCE" title="Follow an idea to its source." description="Search the research corpus, inspect independently reviewed ideas, and explore source relationships without treating a citation as proof of ancestry."/>{error&&<Notice>{error}</Notice>}{!data&&!error&&<div className="loading">Loading the evidence catalog…</div>}{data&&<><Notice><strong>Snapshot: {date(data.snapshot.recordedAt)}.</strong> {fmt(data.snapshot.papers)} papers, {data.snapshot.complete} complete papers, and {fmt(data.snapshot.reviewedIdeas)} current reviewed ideas. Database connectivity is not required to explore this saved evidence.</Notice><div className="filter-bar"><label className="search-field"><Search size={17}/><input aria-label="Search papers" placeholder="Search title, author, or arXiv ID…" value={query} onChange={e=>{setParams(e.target.value?{q:e.target.value}:{});setPage(0)}}/></label><label className="check-label"><input type="checkbox" checked={onlyReviewed} onChange={e=>{setOnlyReviewed(e.target.checked);setPage(0)}}/>Complete papers only</label><span className="subtle-text">{fmt(matches.length)} matches</span></div><div className="literature-layout"><section className="paper-list">{matches.slice(page*25,(page+1)*25).map(p=><button className={'paper-item '+(p.id===paper?.id?'selected':'')} key={p.id} onClick={()=>setSelected(p.id)}><div><span className="paper-id">{p.arxiv_id||p.doi||'Source record'}</span><span className={'status-dot '+(p.status==='complete'?'complete':'')}/></div><h3>{p.title}</h3><p>{p.authors.slice(0,3).join(', ')}{p.authors.length>3?' et al.':''}</p><div className="paper-meta"><span>{p.ideas} reviewed ideas</span><span>{p.source_depth===0?'Original corpus':'Predecessor'}</span></div></button>)}{matches.length===0&&<Empty title="No matching papers">Try a shorter query or include incomplete papers.</Empty>}<div className="pagination"><button disabled={page===0} onClick={()=>setPage(page-1)}>Previous</button><span>{page+1} / {Math.max(1,Math.ceil(matches.length/25))}</span><button disabled={(page+1)*25>=matches.length} onClick={()=>setPage(page+1)}>Next</button></div></section><div className="paper-detail">{paper&&<><section className="panel prose"><div className="panel-heading"><Badge kind="historical_snapshot"/><span className="subtle-text">{paper.status}</span></div><h2>{paper.title}</h2><p>{paper.authors.join(', ')||'Author metadata unavailable in this record.'}</p>{paper.url&&<a className="text-link" href={paper.url} target="_blank" rel="noreferrer">Read the original source<ArrowUpRight size={14}/></a>}<div className="version-list">{paper.versions.map((v,i)=><span key={i}>{v.label||'Unverified version'} · {v.status} · date {v.date_verified?'verified':'unverified'}</span>)}</div></section><section className="panel"><h3>Source relationships</h3><EvidenceGraph data={data} selected={paper.id} onSelect={setSelected}/></section><section className="panel prose"><h3>Reviewed ideas <span className="count">{ideas.length}</span></h3>{ideas.length===0?<p>There are no current, complete, independently accepted idea records for this paper in the exported snapshot. Prepared text alone is not reviewed evidence.</p>:ideas.map(idea=><details className="idea" key={idea.id}><summary><span>{idea.kind.replaceAll('_',' ')}</span>{idea.title}</summary><p>{idea.statement}</p>{Boolean(idea.conditions)&&<p className="caption">Conditions: {typeof idea.conditions==='string'?idea.conditions:JSON.stringify(idea.conditions)}</p>}<small>Relevance {idea.relevance_score}/100 · source version {idea.version||'unverified'}. Relevance is not scientific validity.</small></details>)}</section></>}</div></div></>}</>
+export default function Literature() {
+  const { data, error } = useLiterature();
+  const [params, setParams] = useSearchParams();
+  const query = params.get("q") || "";
+  const [onlyReviewed, setOnlyReviewed] = useState(false);
+  const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState("");
+  const matches = useMemo(
+    () =>
+      data?.papers
+        .filter(
+          (p) =>
+            (!onlyReviewed || p.status === "complete") &&
+            `${p.title} ${p.authors.join(" ")} ${p.arxiv_id || ""}`
+              .toLowerCase()
+              .includes(query.toLowerCase()),
+        )
+        .sort(
+          (a, b) => b.relevance - a.relevance || a.title.localeCompare(b.title),
+        ) || [],
+    [data, query, onlyReviewed],
+  );
+  const paper = data?.papers.find((p) => p.id === selected) || matches[0];
+  const ideas = data?.ideas.filter((i) => i.paper_id === paper?.id) || [];
+  return (
+    <>
+      <PageTitle
+        eyebrow="PAPERKB · LITERATURE & EVIDENCE"
+        title="Follow an idea to its source."
+        description="Search the research corpus, inspect independently reviewed ideas, and explore source relationships without treating a citation as proof of ancestry."
+      />
+      {error && <Notice>{error}</Notice>}
+      {!data && !error && (
+        <div className="loading">Loading the evidence catalog…</div>
+      )}
+      {data && (
+        <>
+          <Notice>
+            <strong>Snapshot: {date(data.snapshot.recordedAt)}.</strong>{" "}
+            {fmt(data.snapshot.papers)} papers, {data.snapshot.complete}{" "}
+            complete papers, and {fmt(data.snapshot.reviewedIdeas)} current
+            reviewed ideas. Database connectivity is not required to explore
+            this saved evidence.
+          </Notice>
+          <div className="filter-bar">
+            <label className="search-field">
+              <Search size={17} />
+              <input
+                aria-label="Search papers"
+                placeholder="Search title, author, or arXiv ID…"
+                value={query}
+                onChange={(e) => {
+                  setParams(e.target.value ? { q: e.target.value } : {});
+                  setPage(0);
+                }}
+              />
+            </label>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={onlyReviewed}
+                onChange={(e) => {
+                  setOnlyReviewed(e.target.checked);
+                  setPage(0);
+                }}
+              />
+              Complete papers only
+            </label>
+            <span className="subtle-text">{fmt(matches.length)} matches</span>
+          </div>
+          <div className="literature-layout">
+            <section className="paper-list">
+              {matches.slice(page * 25, (page + 1) * 25).map((p) => (
+                <button
+                  className={
+                    "paper-item " + (p.id === paper?.id ? "selected" : "")
+                  }
+                  key={p.id}
+                  onClick={() => setSelected(p.id)}
+                >
+                  <div>
+                    <span className="paper-id">
+                      {p.arxiv_id || p.doi || "Source record"}
+                    </span>
+                    <span
+                      className={
+                        "status-dot " +
+                        (p.status === "complete" ? "complete" : "")
+                      }
+                    />
+                  </div>
+                  <h3>{p.title}</h3>
+                  <p>
+                    {p.authors.slice(0, 3).join(", ")}
+                    {p.authors.length > 3 ? " et al." : ""}
+                  </p>
+                  <div className="paper-meta">
+                    <span>{p.ideas} reviewed ideas</span>
+                    <span>
+                      {p.source_depth === 0 ? "Original corpus" : "Predecessor"}
+                    </span>
+                  </div>
+                </button>
+              ))}
+              {matches.length === 0 && (
+                <Empty title="No matching papers">
+                  Try a shorter query or include incomplete papers.
+                </Empty>
+              )}
+              <div className="pagination">
+                <button disabled={page === 0} onClick={() => setPage(page - 1)}>
+                  Previous
+                </button>
+                <span>
+                  {page + 1} / {Math.max(1, Math.ceil(matches.length / 25))}
+                </span>
+                <button
+                  disabled={(page + 1) * 25 >= matches.length}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Next
+                </button>
+              </div>
+            </section>
+            <div className="paper-detail">
+              {paper && (
+                <>
+                  <section className="panel prose">
+                    <div className="panel-heading">
+                      <Badge kind="historical_snapshot" />
+                      <span className="subtle-text">{paper.status}</span>
+                    </div>
+                    <h2>{paper.title}</h2>
+                    <p>
+                      {paper.authors.join(", ") ||
+                        "Author metadata unavailable in this record."}
+                    </p>
+                    {paper.url && (
+                      <a
+                        className="text-link"
+                        href={paper.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Read the original source
+                        <ArrowUpRight size={14} />
+                      </a>
+                    )}
+                    <div className="version-list">
+                      {paper.versions.map((v, i) => (
+                        <span key={i}>
+                          {v.label || "Unverified version"} · {v.status} · date{" "}
+                          {v.date_verified ? "verified" : "unverified"}
+                        </span>
+                      ))}
+                    </div>
+                  </section>
+                  <section className="panel">
+                    <h3>Source relationships</h3>
+                    <EvidenceGraph
+                      data={data}
+                      selected={paper.id}
+                      onSelect={setSelected}
+                    />
+                  </section>
+                  <section className="panel prose">
+                    <h3>
+                      Reviewed ideas{" "}
+                      <span className="count">{ideas.length}</span>
+                    </h3>
+                    {ideas.length === 0 ? (
+                      <p>
+                        There are no current, complete, independently accepted
+                        idea records for this paper in the exported snapshot.
+                        Prepared text alone is not reviewed evidence.
+                      </p>
+                    ) : (
+                      ideas.map((idea) => (
+                        <details className="idea" key={idea.id}>
+                          <summary>
+                            <span>{idea.kind.replaceAll("_", " ")}</span>
+                            {idea.title}
+                          </summary>
+                          <p>{idea.statement}</p>
+                          {Boolean(idea.conditions) && (
+                            <p className="caption">
+                              Conditions:{" "}
+                              {typeof idea.conditions === "string"
+                                ? idea.conditions
+                                : JSON.stringify(idea.conditions)}
+                            </p>
+                          )}
+                          <small>
+                            Relevance {idea.relevance_score}/100 · source
+                            version {idea.version || "unverified"}. Relevance is
+                            not scientific validity.
+                          </small>
+                        </details>
+                      ))
+                    )}
+                  </section>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
 }

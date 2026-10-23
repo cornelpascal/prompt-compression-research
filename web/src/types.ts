@@ -1,14 +1,217 @@
-export type Evidence = 'engineering_fixture' | 'synthetic_pilot' | 'historical_snapshot' | 'finite_source' | 'measured'
-export type Interval = { mean: number; low: number; high: number; articles?: number }
-export type Summary = { method: string; target: string; requested_retained_fraction: number; reference_retained_fraction: number; request_retained_fraction: number; f1: Interval; em: number; budgeted_f1: number; budget_compliance: number; compression_seconds: number; total_seconds: number; cases: number; seeds: number[]; paired_f1_delta?: Interval }
-export type Case = { id: string; method: string; target: string; ratio: number; seed: number; score: { f1: number; em: number }; compression: { text: string; spans: [number, number][]; status: string; input_tokens: number; output_tokens: number }; answer: { text: string }; example?: { prompt: string; question: string; context: string; answers: {text:string}[] } }
-export type ThresholdEntry = { status: string; ratio?: number; retained_fraction?: number; targets: Record<string, { original_f1: number; compressed_f1: number; relative_f1: number; passes: boolean; threshold_margin: Interval }> }
-export type ResearchRun = { id: string; label: string; project: string; recordedAt: string; evidence: Evidence; profile: string; unit: string; identity: string; sourceHash: string; summary: Summary[]; threshold: { threshold: number; entries: Record<string, ThresholdEntry> } | null; training: { method: string; stage: string; steps: number; seconds: number; losses: { step: number; loss: number; gradient_norm: number; rewards: number[] }[] }[]; cases: Case[]; limitations: string[]; source: string }
-export type PrivacyRow = { model: string; method: string; ratio: number; access: string; attacker: string; domain: string; regime: string; utility: number; secret_recovery: number; excess_recovery: number; achieved_retention: number; budget_compliance: number; context_tokens: number }
-export type FrontierPoint = { regime: string; status: string; length_budget: number; error_budget: number; leakage_bits?: number; task_error?: number; expected_length?: number; numerical_gap_bits?: number }
-export type TestRecord = { id: string; title: string; date: string; passed: number; skipped: number|null; failed: number|null; status: string; scope: string; command: string; source: string }
-export type PaperSnapshot = { recordedAt: string; evidence: Evidence; papers: number; complete: number; ideasRecorded: number; reviewedIdeas: number; versions: {state:string;count:number}[]; productionParents: number; sourceHash: string; databaseLive: boolean; note: string }
-export type Catalog = { schemaVersion: number; author: string; generatedAt: string; repository: string; paperkb: PaperSnapshot; compression: ResearchRun[]; privacy: { id:string;label:string;recordedAt:string;evidence:Evidence;unit:string;summary:PrivacyRow[];comparisons: Record<string,unknown>[];frontier:FrontierPoint[];rows:number;limitations:string[] }; datasets: {name:string;train:number;validation:number;test:number;unit:string;groups:number[];license:string;url:string;note:string}[]; tests: TestRecord[]; capabilities: {cpu:boolean;gpu:boolean;productionDatabase:boolean;privateExecutionRepository:string|null}; sources: {name:string;sha256:string;date:string}[] }
-export type Paper = { id:string;title:string;arxiv_id:string|null;doi:string|null;source_depth:number;authors:string[];published:string|null;status:string;ideas:number;relevance:number;url:string|null;versions:{label:string|null;status:string;date_verified:boolean}[] }
-export type Idea = {id:string;paper_id:string;title:string;statement:string;kind:string;conditions:unknown;confidence:unknown;relevance_score:number;validity_flags:unknown;version:string|null}
-export type Literature = {snapshot:PaperSnapshot;papers:Paper[];ideas:Idea[];edges:{source:string;target:string;kind:string;status:string}[]}
+export type Evidence =
+  | "engineering_fixture"
+  | "synthetic_pilot"
+  | "historical_snapshot"
+  | "finite_source"
+  | "measured";
+export type Interval = {
+  mean: number;
+  low: number;
+  high: number;
+  articles?: number;
+};
+export type Summary = {
+  method: string;
+  target: string;
+  requested_retained_fraction: number;
+  reference_retained_fraction: number;
+  request_retained_fraction: number;
+  f1: Interval;
+  em: number;
+  budgeted_f1: number;
+  budget_compliance: number;
+  compression_seconds: number;
+  total_seconds: number;
+  cases: number;
+  seeds: number[];
+  paired_f1_delta?: Interval;
+};
+export type Case = {
+  id: string;
+  method: string;
+  target: string;
+  ratio: number;
+  seed: number;
+  score: { f1: number; em: number };
+  compression: {
+    text: string;
+    spans: [number, number][];
+    status: string;
+    input_tokens: number;
+    output_tokens: number;
+  };
+  answer: { text: string };
+  example?: {
+    prompt: string;
+    question: string;
+    context: string;
+    answers: { text: string }[];
+  };
+};
+export type ThresholdEntry = {
+  status: string;
+  ratio?: number;
+  retained_fraction?: number;
+  targets: Record<
+    string,
+    {
+      original_f1: number;
+      compressed_f1: number;
+      relative_f1: number;
+      passes: boolean;
+      threshold_margin: Interval;
+    }
+  >;
+};
+export type ResearchRun = {
+  id: string;
+  label: string;
+  project: string;
+  recordedAt: string;
+  evidence: Evidence;
+  profile: string;
+  unit: string;
+  identity: string;
+  sourceHash: string;
+  summary: Summary[];
+  threshold: {
+    threshold: number;
+    entries: Record<string, ThresholdEntry>;
+  } | null;
+  training: {
+    method: string;
+    stage: string;
+    steps: number;
+    seconds: number;
+    losses: {
+      step: number;
+      loss: number;
+      gradient_norm: number;
+      rewards: number[];
+    }[];
+  }[];
+  cases: Case[];
+  limitations: string[];
+  source: string;
+};
+export type PrivacyRow = {
+  model: string;
+  method: string;
+  ratio: number;
+  access: string;
+  attacker: string;
+  domain: string;
+  regime: string;
+  utility: number;
+  secret_recovery: number;
+  excess_recovery: number;
+  achieved_retention: number;
+  budget_compliance: number;
+  context_tokens: number;
+};
+export type FrontierPoint = {
+  regime: string;
+  status: string;
+  length_budget: number;
+  error_budget: number;
+  leakage_bits?: number;
+  task_error?: number;
+  expected_length?: number;
+  numerical_gap_bits?: number;
+};
+export type TestRecord = {
+  id: string;
+  title: string;
+  date: string;
+  passed: number;
+  skipped: number | null;
+  failed: number | null;
+  status: string;
+  scope: string;
+  command: string;
+  source: string;
+};
+export type PaperSnapshot = {
+  recordedAt: string;
+  evidence: Evidence;
+  papers: number;
+  complete: number;
+  ideasRecorded: number;
+  reviewedIdeas: number;
+  versions: { state: string; count: number }[];
+  productionParents: number;
+  sourceHash: string;
+  databaseLive: boolean;
+  note: string;
+};
+export type Catalog = {
+  schemaVersion: number;
+  author: string;
+  generatedAt: string;
+  repository: string;
+  paperkb: PaperSnapshot;
+  compression: ResearchRun[];
+  privacy: {
+    id: string;
+    label: string;
+    recordedAt: string;
+    evidence: Evidence;
+    unit: string;
+    summary: PrivacyRow[];
+    comparisons: Record<string, unknown>[];
+    frontier: FrontierPoint[];
+    rows: number;
+    limitations: string[];
+  };
+  datasets: {
+    name: string;
+    train: number;
+    validation: number;
+    test: number;
+    unit: string;
+    groups: number[];
+    license: string;
+    url: string;
+    note: string;
+  }[];
+  tests: TestRecord[];
+  capabilities: {
+    cpu: boolean;
+    gpu: boolean;
+    productionDatabase: boolean;
+    privateExecutionRepository: string | null;
+  };
+  sources: { name: string; sha256: string; date: string }[];
+};
+export type Paper = {
+  id: string;
+  title: string;
+  arxiv_id: string | null;
+  doi: string | null;
+  source_depth: number;
+  authors: string[];
+  published: string | null;
+  status: string;
+  ideas: number;
+  relevance: number;
+  url: string | null;
+  versions: { label: string | null; status: string; date_verified: boolean }[];
+};
+export type Idea = {
+  id: string;
+  paper_id: string;
+  title: string;
+  statement: string;
+  kind: string;
+  conditions: unknown;
+  confidence: unknown;
+  relevance_score: number;
+  validity_flags: unknown;
+  version: string | null;
+};
+export type Literature = {
+  snapshot: PaperSnapshot;
+  papers: Paper[];
+  ideas: Idea[];
+  edges: { source: string; target: string; kind: string; status: string }[];
+};

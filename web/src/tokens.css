@@ -1,1 +1,9 @@
-:root{--paper:#f8f7f2;--sidebar:#f0f1e9;--card:#fcfcf8;--ink:#394b32;--green:#31583d;--muted:#626f58;--line:#e1e4d9}
+:root {
+  --paper: #f8f7f2;
+  --sidebar: #f0f1e9;
+  --card: #fcfcf8;
+  --ink: #394b32;
+  --green: #31583d;
+  --muted: #626f58;
+  --line: #e1e4d9;
+}
