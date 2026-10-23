@@ -1,0 +1,18 @@
+# CPU wheel for torch is installed separately from download.pytorch.org.
+numpy==2.2.6
+scipy==1.16.2
+pydantic==2.11.9
+pytest==8.4.2
+transformers==4.56.2
+peft==0.17.1
+accelerate==1.10.1
+safetensors==0.6.2
+sentencepiece==0.2.1
+matplotlib==3.10.6
+psycopg[binary]==3.2.10
+pypdf==6.1.0
+pdfplumber==0.11.7
+pypdfium2==4.30.0
+fonttools==4.60.0
+sentence-transformers==5.1.1
+python-dotenv==1.1.1

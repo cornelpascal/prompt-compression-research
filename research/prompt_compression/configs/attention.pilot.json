@@ -1,0 +1,73 @@
+{
+  "answer_max_tokens": 64,
+  "attention_key_block": 256,
+  "attention_query_block": 32,
+  "bootstrap_samples": 2000,
+  "candidates": 4,
+  "clip_epsilon": 0.2,
+  "eval_limit": 512,
+  "kl_beta": 0.02,
+  "learning_rate": 2e-05,
+  "methods": [
+    "original",
+    "attention_frozen",
+    "attention_sft"
+  ],
+  "models": {
+    "attention": {
+      "endpoint_env": null,
+      "model": "Qwen/Qwen3-4B-Instruct-2507"
+    },
+    "llmlingua2": {
+      "model": "microsoft/llmlingua-2-xlm-roberta-large-meetingbank"
+    },
+    "mistral": {
+      "endpoint_env": "PROMPTCOMP_MISTRAL_URL",
+      "model": "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
+    },
+    "phi": {
+      "endpoint_env": "PROMPTCOMP_PHI_URL",
+      "model": "microsoft/Phi-4-mini-instruct"
+    },
+    "qwen": {
+      "chat_options": {
+        "enable_thinking": false
+      },
+      "endpoint_env": "PROMPTCOMP_QWEN_URL",
+      "model": "Qwen/Qwen3-8B"
+    },
+    "rewriter": {
+      "endpoint_env": "PROMPTCOMP_REWRITER_URL",
+      "model": "Qwen/Qwen3-4B-Instruct-2507"
+    },
+    "selector": {
+      "model": "answerdotai/ModernBERT-base"
+    },
+    "teacher": {
+      "chat_options": {
+        "enable_thinking": false
+      },
+      "endpoint_env": "PROMPTCOMP_TEACHER_URL",
+      "model": "Qwen/Qwen3-32B"
+    }
+  },
+  "profile": "pilot",
+  "ratios": [
+    0.125,
+    0.25,
+    0.5,
+    0.75,
+    0.85,
+    0.9,
+    0.95,
+    0.98
+  ],
+  "rl_epochs": 1,
+  "seed": 11,
+  "seeds": [
+    11
+  ],
+  "selector_learning_rate": 2e-05,
+  "sft_epochs": 1,
+  "train_limit": 512
+}

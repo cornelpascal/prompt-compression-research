@@ -1,0 +1,90 @@
+{
+  "answer_max_tokens": 64,
+  "bootstrap_samples": 2000,
+  "candidates": 4,
+  "clip_epsilon": 0.2,
+  "eval_limit": 512,
+  "kl_beta": 0.02,
+  "learning_rate": 2e-05,
+  "methods": [
+    "original",
+    "truncate",
+    "llmlingua2",
+    "untrained_rewrite",
+    "rewrite_sft",
+    "rewrite",
+    "delete_sft",
+    "delete",
+    "question_only",
+    "direct_answer"
+  ],
+  "models": {
+    "llmlingua2": {
+      "chat_options": {},
+      "endpoint_env": null,
+      "model": "microsoft/llmlingua-2-xlm-roberta-large-meetingbank",
+      "revision": "ebaba9b0e874dadd3003ffcff828e4397e568089"
+    },
+    "mistral": {
+      "chat_options": {},
+      "endpoint_env": "PROMPTCOMP_MISTRAL_URL",
+      "model": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+      "revision": "68faf511d618ef198fef186659617cfd2eb8e33a"
+    },
+    "phi": {
+      "chat_options": {},
+      "endpoint_env": "PROMPTCOMP_PHI_URL",
+      "model": "microsoft/Phi-4-mini-instruct",
+      "revision": "cfbefacb99257ffa30c83adab238a50856ac3083"
+    },
+    "qwen": {
+      "chat_options": {
+        "enable_thinking": false
+      },
+      "endpoint_env": "PROMPTCOMP_QWEN_URL",
+      "model": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218"
+    },
+    "rewriter": {
+      "chat_options": {},
+      "endpoint_env": "PROMPTCOMP_REWRITER_URL",
+      "model": "Qwen/Qwen3-4B-Instruct-2507",
+      "revision": "cdbee75f17c01a7cc42f958dc650907174af0554"
+    },
+    "selector": {
+      "chat_options": {},
+      "endpoint_env": null,
+      "model": "answerdotai/ModernBERT-base",
+      "revision": "8949b909ec900327062f0ebf497f51aef5e6f0c8"
+    },
+    "teacher": {
+      "chat_options": {
+        "enable_thinking": false
+      },
+      "endpoint_env": "PROMPTCOMP_TEACHER_URL",
+      "model": "Qwen/Qwen3-32B",
+      "revision": "9216db5781bf21249d130ec9da846c4624c16137"
+    }
+  },
+  "profile": "pilot",
+  "ratios": [
+    0.75,
+    0.5,
+    0.25,
+    0.125
+  ],
+  "reference_tokenizer": "rewriter",
+  "rl_epochs": 1,
+  "seed": 11,
+  "seeds": [
+    11
+  ],
+  "selector_learning_rate": 2e-05,
+  "sft_epochs": 1,
+  "train_limit": 512,
+  "training_targets": [
+    "qwen",
+    "mistral"
+  ],
+  "transfer_target": "phi"
+}

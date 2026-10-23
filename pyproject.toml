@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paperkb"
+version = "0.1.0"
+description = "Evidence-linked paper knowledge base orchestrated by Codex agents"
+requires-python = ">=3.12"
+dependencies = [
+  "psycopg[binary]>=3.2,<4",
+  "pydantic>=2.9,<3",
+  "pypdf>=5,<7",
+  "pdfplumber>=0.11,<1",
+  "pypdfium2>=4.30,<6",
+  "fonttools>=4.55,<5",
+  "sentence-transformers>=3.4,<6",
+  "python-dotenv>=1,<2",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+paperkb = "paperkb.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "research/controlled_leakage/tests"]

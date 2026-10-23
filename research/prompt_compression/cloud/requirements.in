@@ -1,0 +1,13 @@
+torch==2.8.0
+transformers==4.56.2
+peft==0.17.1
+accelerate==1.10.1
+numpy==2.2.6
+pydantic==2.11.7
+matplotlib==3.10.6
+llmlingua==0.2.2
+sentencepiece==0.2.1
+safetensors==0.6.2
+pytest==8.4.2
+setuptools==80.9.0
+

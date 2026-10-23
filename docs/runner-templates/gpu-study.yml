@@ -1,0 +1,48 @@
+# TEMPLATE ONLY. Copy to .github/workflows in a PRIVATE execution repository.
+name: Private GPU research
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        type: choice
+        required: true
+        options: [compression, attention, leakage-train, leakage-evaluate]
+permissions:
+  contents: read
+jobs:
+  study:
+    if: github.event.repository.private && vars.ENABLE_GPU_RESEARCH == 'true'
+    runs-on: [self-hosted, linux, x64, research-gpu]
+    environment: research-gpu
+    timeout-minutes: 1440
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: cornelpascal/prompt-compression-research
+          ref: ${{ vars.PUBLIC_SOURCE_REVISION }}
+          persist-credentials: false
+      - name: Execute a configured study
+        env:
+          TASK: ${{ inputs.task }}
+          CONFIG: ${{ vars.LOCKED_CONFIG }}
+          DATA: ${{ vars.PREPARED_DATA }}
+          OUTPUT_ROOT: ${{ vars.RESEARCH_OUTPUT_ROOT }}
+          SUPERVISION: ${{ vars.DELETION_SUPERVISION }}
+          PROMPTCOMP_TEACHER_URL: ${{ vars.TEACHER_URL }}
+          PROMPTCOMP_QWEN_URL: ${{ vars.QWEN_URL }}
+          PROMPTCOMP_MISTRAL_URL: ${{ vars.MISTRAL_URL }}
+          PROMPTCOMP_PHI_URL: ${{ vars.PHI_URL }}
+        run: |
+          set -euo pipefail
+          test -f "$CONFIG"
+          test -d "$DATA"
+          test -d "$OUTPUT_ROOT"
+          output="$OUTPUT_ROOT/$GITHUB_RUN_ID"
+          case "$TASK" in
+            compression) cd research/prompt_compression; bash cloud/run-study.sh "$CONFIG" "$DATA" "$output" ;;
+            attention) cd research/prompt_compression; bash cloud/run-attention-study.sh "$CONFIG" "$DATA" "$SUPERVISION" "$output" ;;
+            leakage-train) leaklab train-compressor --config "$CONFIG" --data "$DATA" --output "$output/training" ;;
+            leakage-evaluate) leaklab run --config "$CONFIG" --data "$DATA" --output "$output/evaluation" ;;
+            *) exit 2 ;;
+          esac
+# Deliberately no public upload. Configure and review curated exports separately.

@@ -1,0 +1,5 @@
+include README.md VALIDATION.md ATTENTION.md
+recursive-include configs *.json
+recursive-include cloud *.md *.sh *.py Dockerfile requirements.in requirements.lock
+recursive-include scripts *.py
+recursive-include tests *.py

@@ -1,0 +1,28 @@
+{
+  "compressor_model": "Qwen/Qwen2.5-3B-Instruct",
+  "task_model": "Qwen/Qwen2.5-7B-Instruct",
+  "attacker_model": "Qwen/Qwen2.5-7B-Instruct",
+  "revisions": {
+    "Qwen/Qwen2.5-7B-Instruct": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "Qwen/Qwen2.5-3B-Instruct": "aa8e72537993ba99e69dfaafa59ed015b17504d1"
+  },
+  "seeds": [
+    11,
+    23,
+    47
+  ],
+  "ratios": [
+    1.0,
+    0.5,
+    0.25,
+    0.125
+  ],
+  "rounds": 3,
+  "sft_epochs": 1,
+  "attacker_epochs": 1,
+  "learning_rate": 0.0002,
+  "privacy_weight": 1.0,
+  "budget_weight": 1.0,
+  "no_query": false,
+  "no_attacker_retraining": true
+}

@@ -1,0 +1,13 @@
+{
+  "backend": "hf",
+  "seeds": [11, 23, 47],
+  "ratios": [1.0, 0.5, 0.25, 0.125],
+  "methods": ["original", "empty", "redact", "redact_compress", "llmlingua2", "summarize"],
+  "task_models": ["Qwen/Qwen2.5-7B-Instruct", "mistralai/Mistral-7B-Instruct-v0.3"],
+  "compressor_model": "Qwen/Qwen2.5-3B-Instruct",
+  "revisions": {},
+  "split": "test",
+  "max_new_tokens": 32,
+  "probability_access": ["text", "top5", "top20", "full"],
+  "bootstrap_samples": 2000
+}

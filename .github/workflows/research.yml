@@ -1,0 +1,103 @@
+name: CPU research workflow
+run-name: '${{ inputs.task }} · ${{ inputs.request_id }}'
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Bounded CPU preset
+        required: true
+        type: choice
+        options: [attention-demo, compression-demo, privacy-pilot, theory, tests]
+      request_id:
+        description: Client request ID (8–80 letters, digits or hyphens)
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  cpu:
+    if: github.actor == 'cornelpascal' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18-bookworm
+        env:
+          POSTGRES_USER: paperkb
+          POSTGRES_PASSWORD: ci-test
+          POSTGRES_DB: paperkb_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U paperkb -d paperkb_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PAPERKB_TEST_DATABASE_URL: postgresql://paperkb:ci-test@127.0.0.1:5432/paperkb_test
+      PAPERKB_DATABASE_URL: postgresql://paperkb:ci-test@127.0.0.1:5432/paperkb_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+      - name: Install finite-source dependencies
+        if: inputs.task == 'theory' || inputs.task == 'privacy-pilot'
+        run: python -m pip install numpy==2.2.6 scipy==1.16.2 pydantic==2.11.9
+      - name: Install CPU research dependencies
+        if: inputs.task != 'theory' && inputs.task != 'privacy-pilot'
+        run: |
+          python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements-ci.txt
+      - name: Execute the validated preset
+        if: ${{ !cancelled() }}
+        id: execute
+        continue-on-error: true
+        env:
+          RESEARCH_TASK: ${{ inputs.task }}
+          REQUEST_ID: ${{ inputs.request_id }}
+        run: python scripts/run_research.py --task "$RESEARCH_TASK" --run-id "$GITHUB_RUN_ID" --request-id "$REQUEST_ID" --output verification/current
+      - name: Upload curated outcome and test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-outcome
+          path: verification/current/public/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve a failed experiment status
+        if: steps.execute.outcome == 'failure'
+        run: exit 1
+  publish:
+    if: ${{ always() && !cancelled() && needs.cpu.result != 'skipped' }}
+    needs: cpu
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-research-outcome
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          name: research-outcome
+          path: verification/download
+      - run: python3 scripts/publish_outcome.py verification/download/outcome.json
+      - name: Commit the public result record
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site-data
+          git diff --staged --quiet && exit 0
+          git commit -m "Record CPU workflow $GITHUB_RUN_ID"
+          git push origin HEAD:main
+  deploy:
+    if: ${{ always() && needs.publish.result == 'success' }}
+    needs: publish
+    uses: ./.github/workflows/pages.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

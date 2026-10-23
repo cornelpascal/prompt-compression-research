@@ -1,0 +1,10 @@
+{
+  "id": "id",
+  "entity_id": "entity_id",
+  "template_id": "template_id",
+  "context": "context",
+  "query": "query",
+  "answer": "task_answer",
+  "secrets": "protected_values",
+  "required_facts": "required_facts"
+}

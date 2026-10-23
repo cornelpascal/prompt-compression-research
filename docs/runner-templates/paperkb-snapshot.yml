@@ -1,0 +1,31 @@
+# TEMPLATE ONLY. Keep this workflow and raw exports in a PRIVATE repository.
+name: Private read-only PaperKB snapshot
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    if: github.event.repository.private && vars.ENABLE_PAPERKB_EXPORT == 'true'
+    runs-on: [self-hosted, linux, x64, paperkb-readonly]
+    environment: paperkb-readonly
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: cornelpascal/prompt-compression-research
+          ref: ${{ vars.PUBLIC_SOURCE_REVISION }}
+          persist-credentials: false
+      - name: Export a private snapshot and allowlisted publication bundle
+        env:
+          PAPERKB_DATABASE_URL: ${{ secrets.PAPERKB_READONLY_DATABASE_URL }}
+          PRIVATE_WORKSPACE: ${{ vars.PRIVATE_WORKSPACE }}
+          PGOPTIONS: -c default_transaction_read_only=on
+        run: |
+          set -euo pipefail
+          test -d "$PRIVATE_WORKSPACE/.paperkb"
+          snapshot="$PRIVATE_WORKSPACE/.paperkb/exports/readonly-$GITHUB_RUN_ID.json"
+          observed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          paperkb export --output "$snapshot"
+          python3 scripts/export_site.py --workspace "$PRIVATE_WORKSPACE" --paperkb-export "$snapshot" --paperkb-recorded-at "$observed_at" --output verification/public-snapshot
+          python3 scripts/validate_site_data.py --directory verification/public-snapshot
+# Inspect the resulting bundle privately before committing it to the public site.

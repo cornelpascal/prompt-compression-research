@@ -1,0 +1,22 @@
+name: paperkb
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg18-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paperkb
+      POSTGRES_USER: paperkb
+      POSTGRES_PASSWORD: ${PAPERKB_DB_PASSWORD:?Run paperkb db init-env}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - paperkb-postgres:/var/lib/postgresql
+    shm_size: 512mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperkb -d paperkb"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  paperkb-postgres:
+

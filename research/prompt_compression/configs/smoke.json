@@ -1,0 +1,58 @@
+{
+  "profile": "smoke",
+  "seed": 11,
+  "seeds": [
+    11
+  ],
+  "ratios": [
+    0.75,
+    0.5,
+    0.25,
+    0.125
+  ],
+  "train_limit": 32,
+  "eval_limit": 32,
+  "candidates": 4,
+  "sft_epochs": 1,
+  "rl_epochs": 1,
+  "learning_rate": 2e-05,
+  "selector_learning_rate": 2e-05,
+  "kl_beta": 0.02,
+  "clip_epsilon": 0.2,
+  "answer_max_tokens": 64,
+  "bootstrap_samples": 2000,
+  "models": {
+    "rewriter": {
+      "model": "Qwen/Qwen3-4B-Instruct-2507",
+      "endpoint_env": "PROMPTCOMP_REWRITER_URL"
+    },
+    "selector": {
+      "model": "answerdotai/ModernBERT-base"
+    },
+    "teacher": {
+      "model": "Qwen/Qwen3-32B",
+      "chat_options": {
+        "enable_thinking": false
+      },
+      "endpoint_env": "PROMPTCOMP_TEACHER_URL"
+    },
+    "qwen": {
+      "model": "Qwen/Qwen3-8B",
+      "chat_options": {
+        "enable_thinking": false
+      },
+      "endpoint_env": "PROMPTCOMP_QWEN_URL"
+    },
+    "mistral": {
+      "model": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+      "endpoint_env": "PROMPTCOMP_MISTRAL_URL"
+    },
+    "phi": {
+      "model": "microsoft/Phi-4-mini-instruct",
+      "endpoint_env": "PROMPTCOMP_PHI_URL"
+    },
+    "llmlingua2": {
+      "model": "microsoft/llmlingua-2-xlm-roberta-large-meetingbank"
+    }
+  }
+}
