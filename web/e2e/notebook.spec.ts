@@ -21,7 +21,7 @@ test('graphs expose underlying values, filters and exports',async({page})=>{
   const csv=page.waitForEvent('download');await page.getByRole('button',{name:'CSV',exact:true}).click()
   expect((await csv).suggestedFilename()).toContain('.csv')
   await page.getByRole('tab',{name:'Privacy & utility',exact:true}).click()
-  await expect(page.locator('h3').filter({hasText:'Utility'}).first()).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Useful information, recoverable information'})).toBeVisible()
   await page.getByRole('tab',{name:'Finite-source frontier',exact:true}).click()
   await expect(page.locator('main')).toContainText('bits')
 })

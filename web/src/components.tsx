@@ -47,3 +47,5 @@ export function Figure({title,subtitle,evidence,rows,children,observations,inter
   </section>
 }
 export function Empty({title,children}:{title:string;children:ReactNode}) {return <div className="empty"><h3>{title}</h3><p>{children}</p></div>}
+
+export function Filter({name,value,onChange,options}:{name:string;value:string;onChange:(v:string)=>void;options:{value:string;label:string}[]}){return <label className="filter"><span>{name}</span><select value={value} onChange={e=>onChange(e.target.value)}>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label>}

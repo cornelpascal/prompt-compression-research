@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CartesianGrid, ErrorBar, Legend, Line, LineChart, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts'
-import { Badge, Figure, Notice, PageTitle, SectionTitle } from '../components'
+import { Badge, Figure, Notice, PageTitle, SectionTitle, Filter } from '../components'
 import { label, pct, privacySeries } from '../data'
 import type { Catalog, Case } from '../types'
 
 const colors=['#285d4b','#bd6b4d','#7b79aa','#779333','#357f9b','#9b655e','#676c79']
 const unique=(values:string[])=>[...new Set(values)].sort()
-export function Filter({name,value,onChange,options}:{name:string;value:string;onChange:(v:string)=>void;options:{value:string;label:string}[]}){return <label className="filter"><span>{name}</span><select value={value} onChange={e=>onChange(e.target.value)}>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label>}
+
 function Highlight({item}:{item:Case}){
   if(!item.example)return <p>Source example unavailable in this export.</p>
   const prompt=item.example.prompt;const spans=item.compression.spans||[];let cursor=0;const nodes=[]
