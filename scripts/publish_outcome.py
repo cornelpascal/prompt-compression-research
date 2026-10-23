@@ -17,6 +17,9 @@ def publish(source, directory):
     assert re.fullmatch(r'\d+', value['id']), 'Only GitHub run IDs can be published'
     assert value['task'] in ('attention-demo', 'compression-demo', 'privacy-pilot', 'theory', 'tests')
     assert value['status'] in ('success', 'failure')
+    if value['status'] == 'success':
+        assert value.get('exitCode') == 0, 'Success requires a zero exit code'
+        assert not any(value.get('tests', {}).get(k, 0) for k in ('failures', 'errors')), 'Success cannot contain test failures'
     assert value['url'] == f'https://github.com/cornelpascal/prompt-compression-research/actions/runs/{value["id"]}'
     safe(value)
     (root / 'jobs').mkdir(exist_ok=True)

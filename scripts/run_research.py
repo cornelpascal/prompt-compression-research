@@ -63,7 +63,7 @@ def run(task, output, run_id, request_id):
                 f'--junitxml={public / "distributed.xml"}'], 'distributed'))
             record['tests'], record['suites'] = test_totals(sorted(public.glob('*.xml')))
             # Test logs remain local to the runner; JUnit artifacts contain failures if present.
-            code = max(codes)
+            code = 0 if all(value == 0 for value in codes) else 1
         elif task in ('attention-demo', 'compression-demo'):
             attention = task == 'attention-demo'
             code = command(['-m', 'promptcomp.attention_smoke' if attention else 'promptcomp.smoke',

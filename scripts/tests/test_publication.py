@@ -5,6 +5,8 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from validate_site_data import safe, validate, refresh_manifest
@@ -75,6 +77,13 @@ class PublicationTests(unittest.TestCase):
             totals, suites = test_totals([path])
             self.assertEqual(totals, dict(tests=6, failures=1, errors=2, skipped=1))
             self.assertEqual(suites[0]['name'], 'suite')
+
+    def test_killed_suite_cannot_be_counted_as_success(self):
+        with tempfile.TemporaryDirectory() as folder, patch('run_research.subprocess.run', return_value=SimpleNamespace(returncode=-9)):
+            code = run('tests', folder, '123', 'request-123')
+            record = json.loads((Path(folder) / 'public/outcome.json').read_text())
+            self.assertNotEqual(code, 0)
+            self.assertEqual(record['status'], 'failure')
 
 
 if __name__ == '__main__':

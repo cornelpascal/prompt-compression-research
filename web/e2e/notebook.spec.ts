@@ -28,7 +28,7 @@ test('graphs expose underlying values, filters and exports',async({page})=>{
 
 test('search, literature filtering, and owner boundary work',async({page})=>{
   await page.goto('#/')
-  await page.getByRole('button',{name:'Search research /'}).click()
+  await page.getByRole('button',{name:'Search research',exact:true}).click()
   await page.getByRole('textbox',{name:'Search research',exact:true}).fill('attention')
   await expect(page.getByRole('dialog')).toContainText('attention')
   await page.keyboard.press('Escape')
