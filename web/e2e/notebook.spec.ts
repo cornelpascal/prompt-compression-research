@@ -11,6 +11,14 @@ test("published workflow results expose a measured graph and its complete record
     page.getByRole("heading", { name: "Published workflow outcomes" }),
   ).toBeVisible();
   await page
+    .locator("section.panel.prose")
+    .filter({ has: page.getByText("success", { exact: true }) })
+    .filter({
+      hasNot: page.getByRole("heading", {
+        name: "Research test suites",
+        exact: true,
+      }),
+    })
     .getByRole("button", { name: "Inspect result", exact: true })
     .first()
     .click();
@@ -25,6 +33,10 @@ test("published workflow results expose a measured graph and its complete record
   const record = JSON.parse(await readFile(file!, "utf8"));
   expect(record.status).toBe("success");
   expect(record.summary.rows.length).toBeGreaterThan(0);
+  if (record.summary.calibration)
+    await expect(
+      page.getByRole("heading", { name: "Frozen validation settings" }),
+    ).toBeVisible();
   expect(errors).toEqual([]);
 });
 
