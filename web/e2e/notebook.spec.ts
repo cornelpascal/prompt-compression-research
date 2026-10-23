@@ -1,4 +1,32 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+
+test("published workflow results expose a measured graph and its complete record", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("#/run");
+  await expect(
+    page.getByRole("heading", { name: "Published workflow outcomes" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Inspect result", exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Workflow measurements", exact: true }),
+  ).toBeVisible();
+  const pending = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download complete result JSON" })
+    .click();
+  const file = await (await pending).path();
+  const record = JSON.parse(await readFile(file!, "utf8"));
+  expect(record.status).toBe("success");
+  expect(record.summary.rows.length).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});
 
 test("all research sections render without browser errors", async ({
   page,
