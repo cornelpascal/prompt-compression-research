@@ -11,6 +11,7 @@ dependencies = ["numpy>=2,<3", "scipy>=1.14,<2", "pydantic>=2.9,<3"]
 
 [project.optional-dependencies]
 gpu = ["torch>=2.5,<3", "transformers>=4.56,<6", "peft>=0.15,<1", "accelerate>=1,<2", "sentencepiece>=0.2,<1", "safetensors>=0.5,<1"]
+tpu = ["torch==2.8.0", "torch_xla[tpu]==2.8.0"]
 llmlingua = ["llmlingua>=0.2.2,<0.3"]
 test = ["pytest>=8,<10"]
 

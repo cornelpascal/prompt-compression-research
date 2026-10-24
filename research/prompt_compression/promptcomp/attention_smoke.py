@@ -1,5 +1,6 @@
 """Offline attention workflow with random tiny weights and fixture solvers."""
 import argparse
+import os
 from pathlib import Path
 
 from .io import atomic_json, canonical, digest
@@ -32,7 +33,7 @@ def run(output):
     generate_supervision(rows, cfg, FixtureTeacher(), EngineeringReward(), counter, root / "supervision")
     raw, identity = load_supervision(root / "supervision", "delete")
     records = attention_records(raw, rows)
-    backend = AttentionBackend(specs["attention"], device="cpu", key_block=16, query_block=2)
+    backend = AttentionBackend(specs["attention"], device=os.environ.get("PROMPTCOMP_DEVICE", "cpu"), key_block=16, query_block=2)
     before = {n: p.detach().clone() for n, p in backend.model.named_parameters()}
     train(backend, records, cfg, root / "attention" / "sft", "attention", "sft", 11,
           digest({"supervision": identity, "records": records}), checkpoint_every=1)

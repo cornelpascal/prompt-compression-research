@@ -12,6 +12,7 @@ dependencies = ["numpy>=2,<3", "pydantic>=2.9,<3"]
 
 [project.optional-dependencies]
 train = ["torch>=2.8,<3", "transformers==4.56.2", "peft==0.17.1", "accelerate==1.10.1", "safetensors>=0.6,<1", "sentencepiece==0.2.1"]
+tpu = ["torch==2.8.0", "torch_xla[tpu]==2.8.0"]
 report = ["matplotlib>=3.10,<4"]
 baseline = ["llmlingua>=0.2.2,<0.3"]
 test = ["pytest>=8,<10"]

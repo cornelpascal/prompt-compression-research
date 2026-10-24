@@ -39,6 +39,9 @@ npm run test:e2e
 
 ## Reproduce CPU research
 
+For experimental single-device TPU execution and its limits, see
+[research/TPU.md](research/TPU.md).
+
 Use Python 3.12 in a fresh virtual environment. Linux CPU installation:
 
 ```sh

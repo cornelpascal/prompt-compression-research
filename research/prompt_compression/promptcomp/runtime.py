@@ -91,10 +91,14 @@ def factory(cfg, counter, registry, selection=None):
 
 def preflight(cfg):
     import torch
+    from .devices import resolve_device
     from .io import environment
+    selected = resolve_device() if os.environ.get("PROMPTCOMP_DEVICE") == "xla" else None
     devices = [{"index": i, "name": torch.cuda.get_device_name(i),
         "total_memory_bytes": torch.cuda.get_device_properties(i).total_memory} for i in range(torch.cuda.device_count())]
     return {"environment": environment(), "cuda_available": torch.cuda.is_available(),
+        "xla_available": selected is not None and selected.type == "xla",
+        "selected_device": str(selected) if selected is not None else None,
         "cuda_version": torch.version.cuda, "devices": devices,
         "configured_endpoints": {alias: bool(spec.endpoint_env and os.environ.get(spec.endpoint_env)) for alias, spec in cfg.models.items()},
         "training_targets": cfg.training_targets, "transfer_target": cfg.transfer_target,
@@ -123,6 +127,7 @@ def estimate(cfg, data_directory, pilot_directory):
         estimates.append({"method": run["method"], "stage": run["stage"], "seed": run["seed"],
             "estimated_steps": steps, "estimated_seconds": seconds, "source_device_type": run["device_type"],
             "estimated_training_gpu_hours": seconds * world / 3600 if run["device_type"] == "cuda" else None,
+            "estimated_training_tpu_hours": seconds * world / 3600 if run["device_type"] == "xla" else None,
             "world_size": world, "source": str(path), "measured_peak_memory_bytes": state["peak_memory_bytes"]})
     return {"training_examples": count, "teacher_generation_calls": teacher_calls,
         "supervision_solver_calls_upper_bound": teacher_calls * len(cfg.training_targets),

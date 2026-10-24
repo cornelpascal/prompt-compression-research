@@ -23,7 +23,9 @@ def parser():
         c = commands.add_parser(name)
         c.add_argument("--config", required=True)
         if name == "preflight":
-            c.add_argument("--require-cuda", action="store_true")
+            required = c.add_mutually_exclusive_group()
+            required.add_argument("--require-cuda", action="store_true")
+            required.add_argument("--require-xla", action="store_true")
             continue
         if name == "estimate":
             c.add_argument("--data", required=True)
@@ -131,6 +133,8 @@ def execute(args):
         result = preflight(cfg)
         if args.require_cuda and not result["cuda_available"]:
             raise RuntimeError("CUDA is required for cloud training; use promptcomp.smoke for CPU engineering tests")
+        if args.require_xla and not result["xla_available"]:
+            raise RuntimeError("Set PROMPTCOMP_DEVICE=xla and install matching torch_xla for TPU training")
         return result
     if args.command == "estimate":
         from .runtime import estimate

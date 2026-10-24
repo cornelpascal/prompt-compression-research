@@ -85,13 +85,15 @@ def build_inverter(model,revision,access,vocabulary_size,feature_dim,device=None
     decoder = AutoModelForSeq2SeqLM.from_pretrained(model,revision=revision,trust_remote_code=False)
     tokenizer = AutoTokenizer.from_pretrained(model,revision=revision,trust_remote_code=False)
     net = SequenceInverter(decoder,access,vocabulary_size,feature_dim)
-    return net.to(device or ("cuda" if torch.cuda.is_available() else "cpu")),tokenizer
+    from .devices import resolve_device
+    return net.to(resolve_device(device)),tokenizer
 
 
 def save_torch(path,value):
+    from .devices import cpu_tree
     path = Path(path)
     temporary = path.with_suffix(".writing")
-    torch.save(value,temporary)
+    torch.save(cpu_tree(value),temporary)
     os.replace(temporary,path)
 
 
@@ -121,7 +123,7 @@ def train_inverter(export,run_directory,scope,output,model,revision,target="secr
         device = next(net.parameters()).device
         optimizer = torch.optim.AdamW(net.parameters(),lr=2e-4)
         if state["epoch"]:
-            saved = torch.load(directory/f"epoch-{state['epoch']:03d}.pt",map_location=device,weights_only=True)
+            saved = torch.load(directory/f"epoch-{state['epoch']:03d}.pt",map_location="cpu",weights_only=True)
             net.load_state_dict(saved["model"])
             optimizer.load_state_dict(saved["optimizer"])
         for epoch in range(state["epoch"],epochs):
@@ -151,7 +153,8 @@ def train_inverter(export,run_directory,scope,output,model,revision,target="secr
                     raise RuntimeError("Non-finite inverter loss")
                 loss.backward()
                 nn.utils.clip_grad_norm_(net.parameters(),1.)
-                optimizer.step()
+                from .devices import step as accelerator_step
+                accelerator_step(optimizer, device)
                 losses.append(loss.item())
             save_torch(directory/f"epoch-{epoch+1:03d}.pt",{"model":net.state_dict(),"optimizer":optimizer.state_dict()})
             state = {"identity":identity,"epoch":epoch+1,"loss":float(np.mean(losses))}
@@ -173,7 +176,7 @@ class TrainedInverter:
         self.metadata = json.loads((directory/"attack.json").read_text())
         m = self.metadata
         self.net,self.tokenizer = build_inverter(m["model"],m["revision"],m["access"],m["vocabulary_size"],m["feature_dim"])
-        weights = torch.load(directory/f"epoch-{m['epoch']:03d}.pt",map_location=next(self.net.parameters()).device,weights_only=True)
+        weights = torch.load(directory/f"epoch-{m['epoch']:03d}.pt",map_location="cpu",weights_only=True)
         self.net.load_state_dict(weights["model"])
         self.net.eval()
 
