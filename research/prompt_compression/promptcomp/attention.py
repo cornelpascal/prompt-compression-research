@@ -85,7 +85,9 @@ class AttentionScorer(nn.Module):
                 return (logits(query, key, kpos, qpos) - log_z[..., None]).exp().sum(dim=(0, 1))
 
             def run(fn, *args):
-                if torch.is_grad_enabled() and (q.requires_grad or k.requires_grad):
+                # PyTorch 2.8's non-reentrant checkpoint helper looks for
+                # torch.xla, which torch_xla does not register in Colab.
+                if q.device.type != "xla" and torch.is_grad_enabled() and (q.requires_grad or k.requires_grad):
                     return checkpoint(fn, *args, use_reentrant=False)
                 return fn(*args)
 
