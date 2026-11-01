@@ -12,6 +12,16 @@ python -m pip install -e 'research/prompt_compression[train,tpu,report,test]' \
   -e 'research/controlled_leakage[gpu,tpu,test]'
 ```
 
+In Google Colab, select **v5e-1 TPU** and runtime version **2025.10** under
+Runtime → Change runtime type. That image provides Python 3.12, PyTorch 2.8,
+and PyTorch/XLA 2.8. The latest Colab image observed on 2026-11-01 provided
+Python 3.13 and PyTorch 2.14, so installing this project's pinned TPU extra
+there attempted to replace the preinstalled stack. On a 2025.10 v5e-1,
+`promptcomp preflight --require-xla`, `promptcomp.attention_smoke`, and
+`promptcomp.smoke` completed with tiny engineering fixtures. Run XLA commands
+as separate processes; initializing the TPU in a notebook Python process and
+then starting another TPU process can abort the second process.
+
 Check the runtime's Python, PyTorch, and XLA versions before changing a Colab
 installation. The project's CUDA Docker image and vLLM GPU server launcher are
 not TPU images. Neither script should be used to install CUDA packages on a TPU.
