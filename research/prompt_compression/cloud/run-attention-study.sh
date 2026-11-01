@@ -6,7 +6,11 @@ supervision="${3:?Supply completed deletion supervision from the existing study}
 run="${4:?Supply a new or matching run directory}"
 : "${PROMPTCOMP_QWEN_URL:?Start the pinned Qwen receiver server first}"
 : "${PROMPTCOMP_MISTRAL_URL:?Start the pinned Mistral receiver server first}"
-promptcomp preflight --config "$config" --require-cuda
+if [[ "${PROMPTCOMP_DEVICE:-}" == "xla" ]]; then
+  promptcomp preflight --config "$config" --require-xla
+else
+  promptcomp preflight --config "$config" --require-cuda
+fi
 seeds=$(python -c 'import json,sys; print(" ".join(map(str,json.load(open(sys.argv[1]))["seeds"])))' "$config")
 for seed in $seeds; do
   bash cloud/train.sh --config "$config" --data "$data" --method attention --stage sft --seed "$seed" \

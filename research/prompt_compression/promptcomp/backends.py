@@ -9,6 +9,7 @@ import time
 import urllib.request
 
 from .io import atomic_json, digest, read_json
+from .devices import resolve_device, synchronize
 
 
 @dataclass(frozen=True)
@@ -57,8 +58,8 @@ class CausalBackend:
         self.tokenizer = self.counter.tokenizer
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.device = torch.device(device or (f"cuda:{os.environ.get('LOCAL_RANK', '0')}" if torch.cuda.is_available() else "cpu"))
-        dtype = torch.bfloat16 if self.device.type == "cuda" and torch.cuda.is_bf16_supported() else torch.float32
+        self.device = resolve_device(device)
+        dtype = torch.bfloat16 if self.device.type == "xla" or (self.device.type == "cuda" and torch.cuda.is_bf16_supported()) else torch.float32
         configuration = AutoConfig.from_pretrained(spec.model,
             revision=None if spec.revision.startswith("local:") else spec.revision, trust_remote_code=False)
         loader = AutoModelForImageTextToText if configuration.model_type == "mistral3" else AutoModelForCausalLM
@@ -86,8 +87,7 @@ class CausalBackend:
         if max_new_tokens < 1 or len(tokens) + max_new_tokens > self.context_limit():
             raise ValueError("Request exceeds model context; no silent truncation")
         ids = torch.tensor([tokens], device=self.device)
-        if self.device.type == "cuda":
-            torch.cuda.synchronize(self.device)
+        synchronize(self.device)
         start = time.perf_counter()
         self.model.eval()
         with torch.no_grad():
@@ -95,8 +95,7 @@ class CausalBackend:
                 max_new_tokens=max_new_tokens, do_sample=sample,
                 temperature=1. if sample else None, top_p=1. if sample else None,
                 top_k=0 if sample else None, pad_token_id=self.tokenizer.pad_token_id)
-        if self.device.type == "cuda":
-            torch.cuda.synchronize(self.device)
+        synchronize(self.device)
         output = tuple(generated[0, len(tokens):].tolist())
         eos = self.model.generation_config.eos_token_id
         eos = eos if isinstance(eos, list) else [eos]

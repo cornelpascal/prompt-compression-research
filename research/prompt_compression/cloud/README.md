@@ -1,5 +1,8 @@
 # Cloud execution
 
+For the experimental single-device PyTorch/XLA path, see [TPU execution](../../TPU.md).
+This CUDA image and its vLLM server recipe are separate from TPU installation.
+
 Run all commands from the `research/prompt_compression` directory. Use separate GPUs for training and frozen model servers; the 32B teacher is needed only during supervision. No cloud jobs are submitted automatically.
 
 ## Build the training image

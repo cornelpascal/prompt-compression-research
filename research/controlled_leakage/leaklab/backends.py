@@ -7,6 +7,7 @@ import numpy as np
 
 from .compressors import HFTokenizer
 from .data import fields
+from .devices import resolve_device
 
 
 @dataclass
@@ -51,8 +52,8 @@ class HFBackend:
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision, trust_remote_code=False)
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
-        dtype = torch.bfloat16 if self.device.type == "cuda" and torch.cuda.is_bf16_supported() else torch.float32
+        self.device = resolve_device(device)
+        dtype = torch.bfloat16 if self.device.type == "xla" or (self.device.type == "cuda" and torch.cuda.is_bf16_supported()) else torch.float32
         self.model = AutoModelForCausalLM.from_pretrained(model_id, revision=revision,
             dtype=dtype, trust_remote_code=False).to(self.device)
         if adapter:

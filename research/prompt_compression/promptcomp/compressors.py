@@ -5,6 +5,7 @@ import re
 import time
 
 from .schema import CompressionRequest, CompressionResult
+from .devices import resolve_device
 
 
 def rewrite_instruction(request, extractive=False):
@@ -64,7 +65,7 @@ class SelectorBackend:
         from torch import nn
         from transformers import AutoModel, AutoTokenizer
         self.spec = spec
-        self.device = torch.device(device or (f"cuda:{os.environ.get('LOCAL_RANK', '0')}" if torch.cuda.is_available() else "cpu"))
+        self.device = resolve_device(device)
         kwargs = {"revision": None if spec.revision.startswith("local:") else spec.revision, "trust_remote_code": False}
         self.tokenizer = AutoTokenizer.from_pretrained(spec.model, **kwargs)
         encoder = AutoModel.from_pretrained(spec.model, attn_implementation="eager", **kwargs)

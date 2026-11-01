@@ -6,7 +6,11 @@ run="${3:?Supply a new or matching run directory}"
 : "${PROMPTCOMP_TEACHER_URL:?Start the pinned teacher server first}"
 : "${PROMPTCOMP_QWEN_URL:?Start the pinned Qwen target server first}"
 : "${PROMPTCOMP_MISTRAL_URL:?Start the pinned Mistral target server first}"
-promptcomp preflight --config "$config" --require-cuda
+if [[ "${PROMPTCOMP_DEVICE:-}" == "xla" ]]; then
+  promptcomp preflight --config "$config" --require-xla
+else
+  promptcomp preflight --config "$config" --require-cuda
+fi
 promptcomp supervise --config "$config" --data "$data" --output "$run/supervision" --cache "$run/cache"
 seeds=$(python -c 'import json,sys; print(" ".join(map(str,json.load(open(sys.argv[1]))["seeds"])))' "$config")
 for seed in $seeds; do

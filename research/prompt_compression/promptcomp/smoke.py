@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 from .io import atomic_json, digest, read_json, tree_hash
@@ -107,7 +108,8 @@ def run(output):
     from .training import checkpoint_identity, load_checkpoint, train
     root = Path(output)
     if root.exists() and any(root.iterdir()):
-        raise ValueError("CPU smoke output must be a new directory")
+        raise ValueError("Smoke output must be a new directory")
+    device = os.environ.get("PROMPTCOMP_DEVICE", "cpu")
     specs = tiny_models(root / "models")
     cfg = smoke_config(specs)
     counter = TokenCounter.from_spec(specs["causal"])
@@ -118,7 +120,7 @@ def run(output):
     registry, changes = {}, {}
     for method in ("rewrite", "delete"):
         seed_all(11)
-        backend = CausalBackend(specs["causal"], trainable=True, device="cpu", lora=False) if method == "rewrite" else SelectorBackend(specs["encoder"], device="cpu")
+        backend = CausalBackend(specs["causal"], trainable=True, device=device, lora=False) if method == "rewrite" else SelectorBackend(specs["encoder"], device=device)
         before = {n: p.detach().clone() for n,p in backend.model.named_parameters() if p.requires_grad}
         records, identity = load_supervision(root / "supervision", method)
         for stage in ("sft", "rl"):
@@ -132,10 +134,10 @@ def run(output):
         if method in ("original", "truncate"):
             return BaselineCompressor(method, counter)
         if method == "rewrite":
-            backend = CausalBackend(specs["causal"], trainable=True, device="cpu", lora=False)
+            backend = CausalBackend(specs["causal"], trainable=True, device=device, lora=False)
             load_checkpoint(backend, registry["rewrite_rl"])
             return RewriteCompressor(backend, counter)
-        backend = SelectorBackend(specs["encoder"], device="cpu")
+        backend = SelectorBackend(specs["encoder"], device=device)
         load_checkpoint(backend, registry["delete_rl"])
         return DeleteCompressor(backend, counter)
     targets = [FixtureTarget(alias, cfg.models[alias], counter) for alias in (*cfg.training_targets, cfg.transfer_target)]

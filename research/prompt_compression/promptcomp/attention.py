@@ -14,6 +14,7 @@ from torch.utils.checkpoint import checkpoint
 from .compressors import render_mask, result, word_spans
 from .io import read_json
 from .schema import CompressionRequest
+from .devices import resolve_device, synchronize
 
 
 def question_span(example):
@@ -156,7 +157,7 @@ class AttentionBackend:
     def __init__(self, spec, device=None, key_block=256, query_block=32):
         from transformers import AutoConfig, AutoTokenizer
         self.spec = spec
-        self.device = torch.device(device or (f"cuda:{os.environ.get('LOCAL_RANK', '0')}" if torch.cuda.is_available() else "cpu"))
+        self.device = resolve_device(device)
         kwargs = {"revision": None if spec.revision.startswith("local:") else spec.revision, "trust_remote_code": False}
         self.tokenizer = AutoTokenizer.from_pretrained(spec.model, **kwargs)
         config = AutoConfig.from_pretrained(spec.model, **kwargs)
@@ -201,6 +202,8 @@ class AttentionCompressor:
         if self.backend.device.type == "cuda":
             torch.cuda.synchronize(self.backend.device)
             torch.cuda.reset_peak_memory_stats(self.backend.device)
+        else:
+            synchronize(self.backend.device)
         started = time.perf_counter()
         count = self.counter.count(request.prompt)
         spans = word_spans(request.prompt)
@@ -221,8 +224,8 @@ class AttentionCompressor:
                 text = render_mask(request.prompt, spans, mask)
             chosen = tuple(span for span, keep in zip(spans, mask) if keep)
         memory = 0
+        synchronize(self.backend.device)
         if self.backend.device.type == "cuda":
-            torch.cuda.synchronize(self.backend.device)
             memory = torch.cuda.max_memory_allocated(self.backend.device)
         return result(request, text, self.counter, time.perf_counter() - started, count, chosen).model_copy(
             update={"peak_memory_bytes": memory})

@@ -53,6 +53,7 @@ def report(directory, output, bootstrap_samples=2000):
         training_compute.append({"method": inputs["method"], "stage": inputs["stage"], "seed": inputs["seed"],
             "world_size": inputs["world_size"], "device_type": inputs["device_type"], "wall_seconds": seconds,
             "allocated_training_gpu_hours": seconds * inputs["world_size"] / 3600 if inputs["device_type"] == "cuda" else 0.,
+            "allocated_training_tpu_hours": seconds * inputs["world_size"] / 3600 if inputs["device_type"] == "xla" else 0.,
             "peak_memory_bytes": state["peak_memory_bytes"]})
     result = {"evaluation_identity": manifest["identity"], "profile": profile,
         "scientific_result": profile != "offline-engineering", "training_compute": training_compute, "summary": summary,

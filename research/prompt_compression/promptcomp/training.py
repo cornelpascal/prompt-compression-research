@@ -13,6 +13,7 @@ from .io import atomic_json, complete_run, digest, file_hash, read_json, run_dir
 from .metrics import compression_reward
 from .schema import CompressionRequest
 from .supervision import seed_all
+from .devices import cpu_tree, step as accelerator_step, synchronize
 
 
 class Distributed:
@@ -20,6 +21,8 @@ class Distributed:
     def __init__(self):
         import torch
         import torch.distributed as dist
+        if os.environ.get("PROMPTCOMP_DEVICE") == "xla" and int(os.environ.get("WORLD_SIZE", "1")) > 1:
+            raise RuntimeError("XLA training currently supports one TPU device per run; launch independent seeds separately")
         if int(os.environ.get("WORLD_SIZE", "1")) > 1 and not dist.is_initialized():
             if torch.cuda.is_available():
                 torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
@@ -67,7 +70,8 @@ def save_checkpoint(root, backend, optimizer, step, total_steps, elapsed_seconds
     folder.mkdir(parents=True, exist_ok=True)
     temporary = folder / ".state.tmp"
     destination = folder / "state.pt"
-    torch.save({"parameters": trainable_state(backend.model), "optimizer": optimizer.state_dict()}, temporary)
+    synchronize(backend.device)
+    torch.save({"parameters": trainable_state(backend.model), "optimizer": cpu_tree(optimizer.state_dict())}, temporary)
     os.replace(temporary, destination)
     state = {"step": step, "total_steps": total_steps, "checkpoint": str(destination.relative_to(root)),
         "sha256": file_hash(destination), "elapsed_seconds": elapsed_seconds, "losses": losses,
@@ -246,7 +250,7 @@ def train(backend, records, cfg, output, method, stage, seed, data_identity, cou
                 loss_value, rewards = _rl_backward(backend, reference, row, ratio, cfg, counter, solvers, method)
             dist.average_gradients(backend.model)
             norm = torch.nn.utils.clip_grad_norm_([p for p in backend.model.parameters() if p.requires_grad], 1., error_if_nonfinite=True)
-            optimizer.step()
+            accelerator_step(optimizer, backend.device)
             losses.append({"step": step+1, "rank": dist.rank, "loss": loss_value, "gradient_norm": float(norm), "rewards": rewards})
             stopping = stop_after is not None and step+1 >= stop_after
             if (step+1) % checkpoint_every == 0 or step+1 == total_steps or stopping:

@@ -13,6 +13,7 @@ from .metrics import answer_accuracy
 from .observations import observation_prompt, observe, probability_text, ProbabilityView
 from .runner import run_lock, seed_everything
 from .schema import Observation
+from .devices import cpu_tree, release_cache, resolve_device, step as accelerator_step
 
 
 def require_train(rows):
@@ -50,7 +51,7 @@ def sft(backend, pairs, directory, epochs=1, lr=2e-4, seed=11):
         raise ValueError("SFT resume inputs changed")
     optimizer = torch.optim.AdamW([p for p in backend.model.parameters() if p.requires_grad], lr=lr)
     if state["epoch"]:
-        optimizer.load_state_dict(torch.load(directory / f"epoch-{state['epoch']:03d}" / "optimizer.pt", map_location=backend.device, weights_only=True))
+        optimizer.load_state_dict(torch.load(directory / f"epoch-{state['epoch']:03d}" / "optimizer.pt", map_location="cpu", weights_only=True))
     for epoch in range(state["epoch"], epochs):
         seed_everything(seed + epoch)
         order = list(range(len(pairs)))
@@ -65,11 +66,11 @@ def sft(backend, pairs, directory, epochs=1, lr=2e-4, seed=11):
                 raise RuntimeError("Non-finite SFT loss")
             loss.backward()
             torch.nn.utils.clip_grad_norm_([p for p in backend.model.parameters() if p.requires_grad], 1.)
-            optimizer.step()
+            accelerator_step(optimizer, backend.device)
             total += float(loss.detach())
         checkpoint = directory / f"epoch-{epoch+1:03d}"
         backend.save(checkpoint)
-        torch.save(optimizer.state_dict(), checkpoint / "optimizer.pt")
+        torch.save(cpu_tree(optimizer.state_dict()), checkpoint / "optimizer.pt")
         state = {"identity": identity, "epoch": epoch+1, "loss": total/max(1,len(pairs)), "adapter": str(checkpoint.resolve())}
         atomic_json(state_path, state)
     backend.model.eval()
@@ -99,8 +100,8 @@ def train_compressor(config_path, data, output):
         raise ValueError("Positive seeds, rounds and epochs required")
     if any(not 0 < r <= 1 for r in cfg["ratios"]):
         raise ValueError("Invalid retained-length ratios")
-    if not torch.cuda.is_available():
-        raise RuntimeError("Full compressor training requires CUDA; CPU pilot is available via run")
+    if resolve_device().type not in ("cuda", "xla"):
+        raise RuntimeError("Full compressor training requires CUDA or XLA; CPU pilot is available via run")
     with run_lock(output) as root:
         identity = digest({"config": cfg, "data": file_hash(data), "code": source_hash()})
         identity_path = root / "manifest.json"
@@ -181,7 +182,7 @@ def train_compressor(config_path, data, output):
                                 raise RuntimeError("Non-finite policy-gradient loss")
                             loss.backward()
                         torch.nn.utils.clip_grad_norm_([p for p in compressor.model.parameters() if p.requires_grad], 1.)
-                        optimizer.step()
+                        accelerator_step(optimizer, compressor.device)
                 checkpoint = round_dir / "compressor"
                 compressor.save(checkpoint)
                 atomic_json(round_dir / "rewards.json", logs)
@@ -189,7 +190,7 @@ def train_compressor(config_path, data, output):
                     "attacker_adapter":attacker_adapter,"seed":seed,"optimizer_reset_each_round":True}
                 atomic_json(state_path, state)
                 del attacker
-                torch.cuda.empty_cache()
+                release_cache(compressor.device)
             registry[str(seed)] = state["compressor_adapter"]
             # The wrapper and optimizer retain model references across seeds.
             if "wrapper" in locals():
@@ -199,7 +200,7 @@ def train_compressor(config_path, data, output):
             if "loss" in locals():
                 del loss
             del compressor, task
-            torch.cuda.empty_cache()
+            release_cache(resolve_device())
         atomic_json(root / "compressor-adapters.json", registry)
         return {"adapters": registry, "training_identity": identity}
 
