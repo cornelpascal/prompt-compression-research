@@ -2,13 +2,16 @@
 
 Uses SQuAD 1.1 *training* examples so the project's official-dev holdout stays
 untouched. Selectors never receive gold answers. Run on a Colab T4 with the
-promptcomp training extra installed.
+promptcomp training extra and bitsandbytes installed. The default receiver is
+Qwen2.5-14B-Instruct loaded in 4-bit NF4; use --model and --quantization to
+compare a smaller FP16 receiver.
 """
 from __future__ import annotations
 
 import argparse
 import collections
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -20,7 +23,7 @@ import urllib.request
 from pathlib import Path
 
 DATA_URL = "https://rajpurkar.github.io/SQuAD-explorer/dataset/train-v1.1.json"
-MODEL = "Qwen/Qwen2.5-3B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen2.5-14B-Instruct"
 METHODS = ("full", "prefix", "random_sentences", "bm25_sentences")
 STOP = frozenset("a an and are as at be by did do does for from how in is it of on or the to was were what when where which who why with".split())
 
@@ -110,22 +113,33 @@ def sample_examples(dataset: dict, tokenizer, count: int, seed: int) -> list[dic
     return selected
 
 
-def run(output: Path, count: int, seed: int) -> dict:
+def run(output: Path, count: int, seed: int, model_id: str, quantization: str) -> dict:
     import torch
     from huggingface_hub import model_info
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
     if output.exists() and any(output.iterdir()):
         raise ValueError("Output directory must be new or empty")
     output.mkdir(parents=True, exist_ok=True)
     if not torch.cuda.is_available():
         raise RuntimeError("This pilot needs a CUDA GPU")
-    revision = model_info(MODEL).sha
-    tokenizer = AutoTokenizer.from_pretrained(MODEL, revision=revision)
+    if quantization == "bnb4" and torch.cuda.get_device_capability(0)[0] < 7:
+        raise RuntimeError("4-bit bitsandbytes requires a supported CUDA GPU")
+    if quantization == "bnb4" and importlib.util.find_spec("bitsandbytes") is None:
+        raise RuntimeError("Install bitsandbytes before running a 4-bit pilot")
+    revision = model_info(model_id).sha
+    tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
+    load_started = time.perf_counter()
+    quantization_config = (BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                                             bnb_4bit_use_double_quant=True,
+                                             bnb_4bit_compute_dtype=torch.float16)
+                           if quantization == "bnb4" else None)
     model = AutoModelForCausalLM.from_pretrained(
-        MODEL, revision=revision, torch_dtype=torch.float16,
-        device_map="auto", low_cpu_mem_usage=True,
+        model_id, revision=revision, torch_dtype=torch.float16,
+        quantization_config=quantization_config, device_map={"": 0}, low_cpu_mem_usage=True,
     ).eval()
+    load_seconds = time.perf_counter() - load_started
+    model_bytes = model.get_memory_footprint()
     dataset_path = output / "train-v1.1.json"
     if not dataset_path.exists():
         urllib.request.urlretrieve(DATA_URL, dataset_path)
@@ -191,7 +205,9 @@ def run(output: Path, count: int, seed: int) -> dict:
     result = {"status": "exploratory_real_receiver_pilot", "dataset": "SQuAD 1.1 official training split",
               "dataset_url": DATA_URL, "dataset_sha256": hashlib.sha256(raw).hexdigest(),
               "sample_ids": [item["id"] for item in examples], "sample_seed": seed,
-              "model": MODEL, "model_revision": revision, "dtype": "float16", "gpu": torch.cuda.get_device_name(0),
+              "model": model_id, "model_revision": revision, "dtype": "float16", "quantization": quantization,
+              "model_memory_footprint_bytes": model_bytes, "model_load_seconds": load_seconds,
+              "gpu": torch.cuda.get_device_name(0), "gpu_total_bytes": torch.cuda.get_device_properties(0).total_memory,
               "torch": torch.__version__, "count": count, "context_budget_ratio": 0.5,
               "decode": {"max_new_tokens": 24, "do_sample": False},
               "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2], text=True).strip(),
@@ -210,5 +226,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--count", type=int, default=24)
     parser.add_argument("--seed", type=int, default=11)
+    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--quantization", choices=("none", "bnb4"), default="bnb4")
     args = parser.parse_args()
-    run(args.output, args.count, args.seed)
+    run(args.output, args.count, args.seed, args.model, args.quantization)

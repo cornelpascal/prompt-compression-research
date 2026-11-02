@@ -42,6 +42,25 @@ npm run test:e2e
 For experimental single-device TPU execution and its limits, see
 [research/TPU.md](research/TPU.md).
 
+For a small real-receiver Colab T4 pilot, install the prompt-compression training
+extra and `bitsandbytes`, then run the standalone
+[`colab_receiver_pilot.py`](research/prompt_compression/colab_receiver_pilot.py):
+
+```sh
+python -m pip install -e 'research/prompt_compression[train]' bitsandbytes
+python research/prompt_compression/colab_receiver_pilot.py --output /content/qwen14b-pilot --count 1
+python research/prompt_compression/colab_receiver_pilot.py --output /content/qwen14b-study --count 24
+```
+
+The default is Qwen2.5-14B-Instruct with 4-bit NF4 weights. The one-example run
+checks model loading and memory before the 24-example comparison. Each example
+is answered with full context, prefix truncation, random sentence selection,
+and query-aware BM25 sentence selection. The result JSON records model revision,
+dataset hash, question IDs, per-case accuracy, token counts, latency, and peak GPU
+memory. This is an exploratory SQuAD training-split pilot, not a held-out result.
+For a smaller FP16 receiver, pass `--model Qwen/Qwen2.5-3B-Instruct
+--quantization none` with a new output directory.
+
 Use Python 3.12 in a fresh virtual environment. Linux CPU installation:
 
 ```sh
