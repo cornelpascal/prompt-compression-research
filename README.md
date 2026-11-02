@@ -61,6 +61,27 @@ memory. This is an exploratory SQuAD training-split pilot, not a held-out result
 For a smaller FP16 receiver, pass `--model Qwen/Qwen2.5-3B-Instruct
 --quantization none` with a new output directory.
 
+For an API receiver that needs no Colab GPU, use OpenAI's `gpt-6-sol` with
+`reasoning.effort=medium`. Create its encrypted local config in a private terminal:
+
+```sh
+python -m pip install -e 'research/prompt_compression[api]'
+python research/prompt_compression/secure_openai_config.py init
+python research/prompt_compression/api_receiver_pilot.py --output research/prompt_compression/runs/api-one --count 1
+python research/prompt_compression/api_receiver_pilot.py --output research/prompt_compression/runs/api-24 --count 24
+```
+
+The setup prompts for the API key and a passphrase without echoing either. It
+encrypts the key with AES-256-GCM and a scrypt-derived key in
+`research/prompt_compression/.secrets/openai.enc.json`; that directory and the
+run outputs are Git-ignored. Each run prompts for the passphrase, decrypts only
+in memory, and sends the public SQuAD passage and question to the Responses API.
+The one-example run makes four API requests. The 24-example run makes 96.
+`max_output_tokens` defaults to 4096 per request, including reasoning tokens;
+actual usage is recorded in the result. Review the one-example usage before
+starting the larger run. The API model is a remote receiver, so it does not
+measure local GPU memory or latency.
+
 Use Python 3.12 in a fresh virtual environment. Linux CPU installation:
 
 ```sh

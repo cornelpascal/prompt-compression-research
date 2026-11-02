@@ -16,6 +16,7 @@ backups/
 **/models/
 **/checkpoints/
 research/prompt_compression/data/
+research/prompt_compression/.secrets/
 web/test-results/
 web/playwright-report/
 web/public/data/

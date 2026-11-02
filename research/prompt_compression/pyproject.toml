@@ -16,6 +16,7 @@ tpu = ["torch==2.8.0", "torch_xla[tpu]==2.8.0"]
 report = ["matplotlib>=3.10,<4"]
 baseline = ["llmlingua>=0.2.2,<0.3"]
 test = ["pytest>=8,<10"]
+api = ["openai>=2,<3", "tiktoken>=0.11,<1", "cryptography>=45,<47"]
 
 [project.scripts]
 promptcomp = "promptcomp.cli:main"
