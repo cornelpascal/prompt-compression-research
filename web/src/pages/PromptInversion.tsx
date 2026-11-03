@@ -1,6 +1,27 @@
+import { useEffect, useState } from "react";
 import { Code, Notice, PageTitle, SectionTitle, Source } from "../components";
+import { resource } from "../data";
+
+type InversionSummary = {
+  recordedAt: string;
+  model: string;
+  requests: number;
+  families: {
+    family: string;
+    pairs: number;
+    controlExactPrompt: number;
+    controlMarker: number;
+    liveInputTokens: number;
+    liveOutputTokens: number;
+    liveLatencySeconds: number;
+  }[];
+};
 
 export default function PromptInversion() {
+  const [result, setResult] = useState<InversionSummary>();
+  useEffect(() => {
+    resource<InversionSummary>("prompt-inversion.json").then(setResult).catch(() => {});
+  }, []);
   return (
     <>
       <PageTitle
@@ -9,10 +30,32 @@ export default function PromptInversion() {
         description="Can a model's visible replies disclose the hidden instructions that govern it? This experiment probes GPT-6 Luna and keeps verifiable controls separate from unverified live claims."
       />
       <Notice>
-        No GPT-6 Luna results have been collected or published yet. The API key
-        must be entered locally before the bounded experiment can run. A reply
-        that claims to reveal Luna's system prompt cannot verify its own accuracy.
+        {result
+          ? `${result.requests} API requests were recorded on ${result.recordedAt.slice(0, 10)}. Controlled recovery counts are measurable; Luna's hidden prompt remains unavailable as ground truth.`
+          : "No complete GPT-6 Luna result has been published yet. A reply that claims to reveal Luna's system prompt cannot verify its own accuracy."}
       </Notice>
+      {result && (
+        <section className="panel prose">
+          <h2>Measured probe summary</h2>
+          <p>Model: {result.model}. Six paired probes per technique. Live token counts and latency include API processing and network time.</p>
+          <div className="table-scroll">
+            <table>
+              <thead><tr><th>Technique</th><th>Control full prompt</th><th>Control marker</th><th>Live input tokens</th><th>Live output tokens</th><th>Live seconds</th></tr></thead>
+              <tbody>{result.families.map((item) => (
+                <tr key={item.family}>
+                  <td>{item.family.replaceAll("_", " ")}</td>
+                  <td>{item.controlExactPrompt}/{item.pairs}</td>
+                  <td>{item.controlMarker}/{item.pairs}</td>
+                  <td>{item.liveInputTokens}</td>
+                  <td>{item.liveOutputTokens}</td>
+                  <td>{item.liveLatencySeconds}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+          <p>No live response is scored as verified system-prompt recovery.</p>
+        </section>
+      )}
       <SectionTitle title="What the experiment can establish" />
       <div className="two-columns">
         <section className="panel prose">

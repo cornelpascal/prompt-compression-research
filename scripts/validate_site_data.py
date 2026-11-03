@@ -54,6 +54,19 @@ def validate(directory):
     for row in catalog['privacy']['frontier']:
         if row['status'] == 'infeasible':
             assert 'leakage_bits' not in row, 'Infeasible points cannot be shown as zero leakage'
+    inversion_path = root / 'prompt-inversion.json'
+    if inversion_path.exists():
+        inversion = json.loads(inversion_path.read_text())
+        assert inversion['schemaVersion'] == 1
+        assert inversion['model'] == 'gpt-6-luna' and inversion['requests'] == 48
+        assert inversion['controlledPromptKnown'] is True
+        assert inversion['livePromptGroundTruthAvailable'] is False
+        assert re.fullmatch(r'[a-f0-9]{64}', inversion['sourceSha256'])
+        assert len(inversion['families']) == 4
+        for family in inversion['families']:
+            assert family['pairs'] == 6
+            assert 0 <= family['controlExactPrompt'] <= 6
+            assert 0 <= family['controlMarker'] <= 6
     return {'papers': len(papers), 'reviewedIdeas': len(literature['ideas']), 'files': len(manifest['files'])}
 
 
