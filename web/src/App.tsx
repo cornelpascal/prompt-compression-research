@@ -39,6 +39,7 @@ import type { Literature as LiteratureData } from "./types";
 const Literature = lazy(() => import("./pages/Literature"));
 const Results = lazy(() => import("./pages/Results"));
 const RunCenter = lazy(() => import("./pages/RunCenter"));
+const PromptInversion = lazy(() => import("./pages/PromptInversion"));
 const nav = [
   ["/", "Overview", House],
   ["/methods", "Methods", Layers],
@@ -46,6 +47,7 @@ const nav = [
   ["/datasets", "Datasets & protocols", Database],
   ["/experiments", "Experiments", FlaskConical],
   ["/results", "Results & analysis", ChartNoAxesCombined],
+  ["/prompt-inversion", "Prompt inversion", Search],
   ["/validation", "Tests & validation", ShieldCheck],
   ["/run", "Run center", Play],
   ["/reproduce", "Reproduce", Terminal],
@@ -195,13 +197,13 @@ function Shell() {
         </Link>
         <div className="nav-label">EXPLORE THE RESEARCH</div>
         <nav>
-          {nav.map(([path, name, Icon], i) => (
+          {nav.map(([path, name, Icon]) => (
             <NavLink
               end={path === "/"}
               to={path}
               key={path}
               className={({ isActive }) =>
-                (isActive ? "active " : "") + (i === 7 ? "nav-divider" : "")
+                (isActive ? "active " : "") + (path === "/run" ? "nav-divider" : "")
               }
             >
               <Icon size={17} />
@@ -292,6 +294,7 @@ function Shell() {
                   element={<Experiments data={data} />}
                 />
                 <Route path="/results" element={<Results data={data} />} />
+                <Route path="/prompt-inversion" element={<PromptInversion />} />
                 <Route
                   path="/validation"
                   element={<Validation data={data} />}

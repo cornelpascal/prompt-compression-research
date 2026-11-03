@@ -82,6 +82,23 @@ actual usage is recorded in the result. Review the one-example usage before
 starting the larger run. The API model is a remote receiver, so it does not
 measure local GPU memory or latency.
 
+## Prompt inversion
+
+The [Prompt Inversion section](https://cornelpascal.github.io/prompt-compression-research/#/prompt-inversion)
+defines a bounded black-box probe of GPT-6 Luna's hidden instructions. It pairs
+24 fixed user prompts with a synthetic known-prompt control, for 48 requests
+at most. The control measures exact recovery of its random marker and complete
+prompt. Luna's own hidden prompt is not available as ground truth, so any live
+claim to reveal it is reported as unverified. Only visible output is observed.
+
+With the encrypted API config initialized as above, run the two-request check
+before the full experiment:
+
+```sh
+python research/prompt_compression/prompt_inversion.py --output research/prompt_compression/runs/inversion-smoke --limit 2
+python research/prompt_compression/prompt_inversion.py --output research/prompt_compression/runs/inversion-full --limit 48
+```
+
 Use Python 3.12 in a fresh virtual environment. Linux CPU installation:
 
 ```sh

@@ -85,7 +85,7 @@ def run(output: Path, config_path: Path, count: int, seed: int, max_output_token
             selected, fallback, selection_ms = variants[method]
             started = time.perf_counter()
             response = client.responses.create(
-                model=config["model"], reasoning={"effort": config["reasoning_effort"]},
+                model="gpt-6-sol", reasoning={"effort": "medium"},
                 instructions="Answer the question using only the passage. Return only the shortest answer span.",
                 input=f"Passage:\n{selected}\n\nQuestion: {example['question']}",
                 max_output_tokens=max_output_tokens, store=False)
@@ -114,7 +114,7 @@ def run(output: Path, config_path: Path, count: int, seed: int, max_output_token
     result = {"status": "exploratory_api_receiver_pilot", "dataset": "SQuAD 1.1 official training split",
               "dataset_url": DATA_URL, "dataset_sha256": hashlib.sha256(raw).hexdigest(),
               "sample_ids": [item["id"] for item in examples], "sample_seed": seed,
-              "model": config["model"], "reasoning_effort": config["reasoning_effort"],
+              "model": "gpt-6-sol", "reasoning_effort": "medium",
               "token_budget_proxy": "tiktoken o200k_base; API usage is authoritative",
               "count": count, "context_budget_ratio": 0.5, "max_output_tokens": max_output_tokens,
               "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2], text=True).strip(),

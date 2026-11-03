@@ -31,7 +31,7 @@ def init_config(path: Path = DEFAULT_PATH) -> None:
     if passphrase != getpass.getpass("Repeat config passphrase: "):
         raise ValueError("Passphrases differ")
     salt, nonce = os.urandom(16), os.urandom(12)
-    plaintext = json.dumps({"api_key": api_key, "model": "gpt-6-sol", "reasoning_effort": "medium"}).encode()
+    plaintext = json.dumps({"api_key": api_key}).encode()
     ciphertext = AESGCM(_key(passphrase, salt)).encrypt(nonce, plaintext, AAD)
     payload = {"format": "promptcomp-openai-aesgcm-v1", "salt": salt.hex(),
                "nonce": nonce.hex(), "ciphertext": ciphertext.hex()}
@@ -60,9 +60,9 @@ def load_config(path: Path = DEFAULT_PATH) -> dict[str, str]:
     plaintext = AESGCM(_key(passphrase, bytes.fromhex(payload["salt"]))).decrypt(
         bytes.fromhex(payload["nonce"]), bytes.fromhex(payload["ciphertext"]), AAD)
     config = json.loads(plaintext)
-    if config.get("model") != "gpt-6-sol" or config.get("reasoning_effort") != "medium":
-        raise ValueError("Expected GPT-6 Sol with medium reasoning")
-    return config
+    if not isinstance(config.get("api_key"), str) or not config["api_key"]:
+        raise ValueError("Encrypted config has no API key")
+    return {"api_key": config["api_key"]}
 
 
 if __name__ == "__main__":
